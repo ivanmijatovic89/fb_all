@@ -2,10 +2,12 @@
 
 function PageMain() {
 
+
 	// echo "<br><br><br><hr>SESSION <br>";
  // print_r($_SESSION);
  // echo "<hr><br><br><br>COOKIE<br> ";
  // print_r($_COOKIE);
+
 
 	global $TMPL, $LNG, $CONF, $db, $loggedIn, $settings;
 	

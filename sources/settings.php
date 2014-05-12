@@ -304,11 +304,13 @@ function PageMain() {
 				$TMPL['years']  = generateDateForm(0, $date[0]);
 				$TMPL['months'] = generateDateForm(1, $date[1]);
 				$TMPL['days']   = generateDateForm(2, $date[2]);
+
 				
 				$TMPL['currentFirstName'] = $userSettings['first_name']; $TMPL['currentLastName'] = $userSettings['last_name']; $TMPL['currentEmail'] = $userSettings['email']; $TMPL['currentLocation'] = $userSettings['location']; $TMPL['currentWebsite'] = $userSettings['website']; $TMPL['currentBio'] = $userSettings['bio']; $TMPL['currentFacebook'] = $userSettings['facebook'];$TMPL['currentLinkedin'] = $userSettings['linkedin']; $TMPL['currentTwitter'] = $userSettings['twitter'];  
 				$TMPL['currentGplus'] = $userSettings['gplus'];
 				$TMPL['currentFitness'] = $userSettings['fitness'];
 				
+
 				$TMPL['currentProfession'] = $userSettings['profession'];
 				$TMPL['currentEmployer_name'] = $userSettings['employer_name'];
 				$TMPL['currentCollege'] = $userSettings['college'];

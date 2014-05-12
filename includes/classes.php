@@ -1339,7 +1339,7 @@ class feed {
 							</div>
 						</div>
 						<div class="message-divider"></div>
-						'.$this->getType($row['type'], $row['value'], $row['id']).'
+						'.$this->getType($row['type'], $row['value'], $row['id'], $row['parent_id']).'
 						<div class="message-replies">
 							<div class="message-actions"><div class="message-actions-content" id="message-action'.$row['id'].'">'.$this->getActions($row['id'], $row['likes'], null).'</div></div>
 							<div class="message-replies-content" id="comments-list'.$row['id'].'">
@@ -1546,7 +1546,7 @@ class feed {
 								</div>
 								<div class="cover-description-content">
 									<span id="author'.$profile['idu'].$profile['username'].'"></span><span id="time'.$profile['idu'].$profile['username'].'"></span><div class="cover-username">'.realName($profile['username'], $profile['first_name'], $profile['last_name']).''.((!empty($profile['verified'])) ? '<img src="'.$this->url.'/'.$CONF['theme_url'].'/images/icons/verified.png" title="'.$LNG['verified_user'].'" />' : '').'</div>
-									<div class="cover-description-buttons"><div id="subscribe'.$profile['idu'].'">'.$this->getSubscribe(null, null, null).'</div>'.$this->chatButton($profile['idu'], $profile['username'], 1).'</div>
+									<div class="cover-description-buttons"><div id="subscribe'.$profile['idu'].'">'.$this->getSubscribe(null, null, null).'</div>'.$this->chatButton($profile['idu'], $profile['username'], 1).' <a href="index.php?a=profile&u='.$profile['username'].'&p=photos">Photos</a></div>
 								</div>
 							</div>
 						</div>
@@ -2249,10 +2249,22 @@ class feed {
 
 		return $parsedMessage;
 	}
+
+	function get_album_photos($album_id){
+		$query = sprintf("SELECT a.value,a.tags,a.location,a.likes,a.id FROM album_photos a WHERE a.album_id=%d", $album_id);
+
+   		$result = $this->db->query($query);
+
+   		return $result;
+
+	}
+
+
 	
-	function getType($type, $value, $id) {
+	function getType($type, $value, $id, $parent_id) {
 		global $LNG, $CONF;
 		// Switch the case
+
 		switch($type) {
 		
 			// If it's a map
@@ -2341,6 +2353,80 @@ class feed {
 					return '<div class="message-type-player"><iframe width="100%" height="315" src="http://player.vimeo.com/video/'.str_replace('vm:', '', $value).'" frameborder="0" allowfullscreen></iframe></div>
 					<div class="message-divider"></div>';
 				}
+			// If it's a album	
+			case "album":
+				$result .= '<div class="message-type-image"><div class="image-container-padding">';
+				$result .= '<table>';
+
+				$i = 0;
+
+				$album_photos = $this->get_album_photos($parent_id);
+
+				while ($row = $album_photos->fetch_array()) {
+					if($i == 0){
+						$result .= '<tr>';
+					}
+					$result .= '<td>';
+					$result .= '<a onclick="gallery(\''.$row[0].'\', '.$id.', \'media\')" id="'.$row[0].'">';
+						$result .= '<div class="image-thumbnail-container">'; 
+							$result .='<div class="image-thumbnail">';
+								$result .= '<img src="'.$this->url.'/thumb.php?src='.$row[0].'&w=300&h=300&t=m">'; 
+								
+							$result .='</div>'; 														
+						$result .='</div>';
+					$result .= '</a>';
+					if(!empty($row[2])){
+						$result .= '<span>In '.$row[2].'</span>';
+					}								
+					$result .= '<span class="like_btn"> '.$row[3].'</span>';
+					if(!empty($row[1])){
+						$tags = unserialize($row[1]);
+						$result .= '<br/>';
+						foreach($tags as $user){
+							$result .= '<a href="index.php?a=profile&u='.$user.'">'.$user.'</a><br/>';
+						}
+					}
+					$result .= '<a onclick="doLike2('.$row[4].', 1)" id="doLike288" style="float:right;">Like</a>';
+					$result .= '</td>';
+
+					$i++;
+
+					if($i == 3){
+						$result .= '</tr>';
+						$i = 0;
+					}
+				}
+
+				$result .= '</table>';
+				$result .= '</div>';
+
+				return $result.'</div><div class="message-divider"></div>';
+				break;
+
+				// $images = explode(',', $value);
+				// if(count($images) == 1) {
+				// 	$result .= '<div class="message-type-image">';
+				// 	$i = 0;
+				// 	foreach($images as $image) {
+				// 		if(!empty($image)){
+				// 			$result .= '<a onclick="gallery(\''.$image.'\', '.$id.', \'media\')" id="'.$image.'"><img src="'.$this->url.'/thumb.php?src='.$image.'&w=650&h=300&t=m" /></a>';
+				// 		}else{
+				// 			$result .= "This picture has been deleted";
+				// 		}
+						
+				// 		$i++;
+				// 	}
+				// } else {
+				// 	$result .= '<div class="message-type-image"><div class="image-container-padding">';
+				// 	$i = 0;
+				// 	foreach($images as $image) {
+				// 		$result .= '<a onclick="gallery(\''.$image.'\', '.$id.', \'media\')" id="'.$image.'"><div class="image-thumbnail-container"><div class="image-thumbnail"><img src="'.$this->url.'/thumb.php?src='.$image.'&w=204&h=204&t=m" /></div></div></a>';
+				// 		$i++;
+				// 	}
+				// 	$result .= '</div>';
+				// }
+				// return $result.'</div><div class="message-divider"></div>';
+				// break;
 				
 			// If it's empty
 			case "":
@@ -2376,7 +2462,7 @@ class feed {
 			$stmt = $this->db->prepare("DELETE FROM `chat` WHERE `id` = '{$this->db->real_escape_string($id)}' AND `from` = '{$this->db->real_escape_string($this->id)}'");
 			
 			$x = 2;
-		}
+		} 
 
 		// Execute the statement
 		$stmt->execute();
@@ -2633,6 +2719,7 @@ class feed {
 			// Start the output
 			$link = '<div class="sidebar-container widget-types"><div class="sidebar-content"><div class="sidebar-header">'.$LNG['filter_events'].'</div>';
 			$link .= '<div class="sidebar-link"><a href="'.$this->url.'/index.php?a='.$_GET['a'].$profile.'"><img src="'.$this->url.'/'.$CONF['theme_url'].'/images/icons/events/all.png" />'.$LNG["all_events"].'</a></div>';
+
 			foreach($row as $type) {
 				// Start the strong tag
 				if($type == $bold) {
