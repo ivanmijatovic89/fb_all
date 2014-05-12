@@ -19,6 +19,7 @@ $LNG['user_too_short'] = 'The username must be between 3 and 32 characters.';
 $LNG['invalid_email'] = 'Invalid e-mail!';
 $LNG['invalid_user_pw'] = 'Invalid username or password.';
 $LNG['invalid_captcha'] = 'Invalid captcha';
+$LNG['you_must_have_more_than_17_years'] = 'You must be older than 17 years!';
 $LNG['log_out'] = 'Log Out';
 $LNG['hello'] = 'Hello';
 $LNG['visitor'] = 'Visitor';
@@ -27,6 +28,7 @@ $LNG['login'] = 'Login';
 $LNG['password'] = 'Password';
 $LNG['username'] = 'Username';
 $LNG['email'] = 'Email';
+$LNG['born'] = 'Born';
 $LNG['username_or_email'] = 'Username or email';
 $LNG['welcome_title'] = 'Welcome';
 $LNG['welcome_desc'] = 'to our social network';
@@ -234,6 +236,7 @@ $LNG['user_desc_general'] = 'Change account, privacy, location settings.';
 $LNG['user_desc_security'] = 'Change your password.';
 $LNG['user_desc_avatar'] = 'Change your account picture.';
 $LNG['user_desc_cover'] = 'Change your cover picture.';
+$LNG['user_desc_bck'] = 'Change your background picture.';
 $LNG['user_desc_notifications'] = 'Change notifications settings.';
 
 $LNG['ttl_background'] = 'Backgrounds';
@@ -269,12 +272,33 @@ $LNG['sub_offline'] = 'The visibility status for the Chat';
 $LNG['ttl_facebook'] = 'Facebook';
 $LNG['sub_facebook'] = 'Your facebook profile ID.';
 
+$LNG['ttl_linkedin'] = 'Linkedin';
+$LNG['sub_linkedin'] = 'Your linkedin profile ID.';
+
+$LNG['ttl_fitness'] = 'Fitness';
+$LNG['sub_fitness'] = 'Your fitness profile ID.';
+
 $LNG['ttl_twitter'] = 'Twitter';
 $LNG['sub_twitter'] = 'Your twitter profile ID.';
 
 $LNG['ttl_google'] = 'Google+';
 $LNG['sub_google'] = 'Your google+ profile ID.';
+//---------------------------------------------------------------------------------------------
+$LNG['ttl_profession'] = 'Industry of profession';
+$LNG['sub_profession'] = 'Your industry of profession.';
 
+$LNG['ttl_employer_name'] = 'Employer name';
+$LNG['sub_employer_name'] = 'Your Employer name';
+
+$LNG['ttl_college'] = 'College';
+$LNG['sub_college'] = 'Your college.';
+
+$LNG['ttl_college_year'] = 'Year of graduation';
+$LNG['sub_college_year'] = 'Your year of graduation';
+
+$LNG['ttl_self_assessment'] = 'Self assessment';
+$LNG['sub_self_assessment'] = 'Enter self assessment info';
+//---------------------------------------------------------------------------------------------
 $LNG['ttl_bio'] = 'Bio';
 $LNG['sub_bio'] = 'About you (160 characters or less)';
 
@@ -305,6 +329,7 @@ $LNG['sub_password'] = 'Enter a new password (at least 3 characters)';
 $LNG['save_changes'] = 'Save Changes';
 $LNG['ttl_upload_photo'] = 'Upload Photo';
 $LNG['ttl_upload_cover'] = 'Upload Cover';
+$LNG['ttl_upload_bck'] = 'Upload Background';
 $LNG['ttl_delete_photo'] = 'Delete Photo';
 
 $LNG['ttl_notificationl'] = 'Likes Notifications';

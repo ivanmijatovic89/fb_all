@@ -1,7 +1,21 @@
 <?php
+
 function PageMain() {
+
+	// echo "<br><br><br><hr>SESSION <br>";
+ // print_r($_SESSION);
+ // echo "<hr><br><br><br>COOKIE<br> ";
+ // print_r($_COOKIE);
+
 	global $TMPL, $LNG, $CONF, $db, $loggedIn, $settings;
 	
+
+	if(isset($_GET['logout']) == 1) {
+		$loggedIn->logOut();
+		header("Location: ".$CONF['url']."/index.php?a=welcome");
+	}
+
+
 	if(isset($_SESSION['username']) && isset($_SESSION['password']) || isset($_COOKIE['username']) && isset($_COOKIE['password'])) {	
 		$verify = $loggedIn->verify();
 		
@@ -84,15 +98,12 @@ function PageMain() {
 		header("Location: ".$CONF['url']."/index.php?a=welcome");
 	}
 	
-	if(isset($_GET['logout']) == 1) {
-		$loggedIn->logOut();
-		header("Location: ".$CONF['url']."/index.php?a=welcome");
-	}
-
+	
 	$TMPL['url'] = $CONF['url'];
 	$TMPL['title'] = $LNG['title_feed'].' - '.$settings['title'];
 
 	$skin = new skin('shared/timeline');
 	return $skin->make();
+	
 }
 ?>

@@ -39,7 +39,12 @@ if(!empty($_GET['t'])) {
 		$width_list = array(800, 900, 1000);
 		$height_list = array(100, 200, 300);
 		$quality_list = array(50, 75, 100);
-	} else {
+	}  elseif($_GET['t'] == 'b') {
+		$type = 'uploads/bck';
+		$width_list = array(800, 900, 1000);
+		$height_list = array(100, 200, 300);
+		$quality_list = array(50, 75, 100);
+	}else {
 		exit('Invalid parameter value');
 	}
 } else {

@@ -1,4 +1,9 @@
 <?php
+ 
+
+ 
+
+ 
 function PageMain() {
 	global $TMPL, $LNG, $CONF, $db, $loggedIn, $settings;
 	
@@ -26,6 +31,37 @@ function PageMain() {
 				$userSettings = $updateUserSettings->getSettings();
 				
 				$page .= $skin->make();
+			} elseif($_GET['b'] == 'deactivate') {
+
+				
+				// SELEKTUJEM USER-a
+				$query = sprintf("SELECT * FROM `users` WHERE `username` = '%s' AND `password` = '%s'", $db->real_escape_string($loggedIn->username), $db->real_escape_string($loggedIn->password));
+				$result = $db->query($query);
+				$row = $result->fetch_assoc();
+
+				// uzme id od user-a
+				$idu = $row['idu'];
+				
+				// ovo je da upishe u deactivate tabelu
+				$query2 = move_user($row,'users_deactivated');
+				$result2 = $db->query($query2);
+
+				// izbrisem user-a iz tabele users
+				$query_delete =  sprintf("DELETE FROM `users` WHERE `idu` = '%s' ",$idu);
+				$result_delete = $db->query($query_delete);
+
+				unset($_SESSION['username']);
+				unset($_SESSION['password']);
+				setcookie("username", '', 1);
+				setcookie("password", '', 1);
+					// ovo je da izbaci logovanje preko facebook-a
+				Hybrid_Auth::logoutAllProviders();
+				
+				//redirektujem ga na stranicu gde moze da aktivira nalog i neku poruku mu jos izbacim
+				header("Location: ".$CONF['url']."/index.php?a=welcome&acc=deactivated");
+				//echo "deactivate"; 
+				
+
 			} elseif($_GET['b'] == 'avatar') {
 				$skin = new skin('settings/avatar'); $page = '';
 				
@@ -35,6 +71,9 @@ function PageMain() {
 				$updateUserSettings->id = $verify['idu'];
 				$TMPL['image'] = '<img src="'.$CONF['url'].'/thumb.php?src='.$verify['image'].'&t=a" width="80" height="80" />';
 				$TMPL['cover'] = '<img src="'.$CONF['url'].'/thumb.php?src='.$verify['cover'].'&t=c&w=900&h=200" />';
+				$TMPL['bck'] = '<img src="'.$CONF['url'].'/uploads/bck/'.$verify['bck'].'" />';
+				// ovo dole odkomentarisi ako hoces da slika bude manja
+				// $TMPL['bck'] = '<img src="'.$CONF['url'].'/thumb.php?src='.$verify['bck'].'&t=b&w=900&h=200" />';
 				
 				$maxsize = $settings['size'];
 
@@ -62,6 +101,10 @@ function PageMain() {
 							// Send the image name in array format to the function
 							$image = array('image' => $finalName);
 							$updateUserSettings->query_array('users', $image);
+
+							// $bck = array('bck'=>'baclgrpadsfa');
+							// $updateUserSettings->query_array('users', $bck);													
+
 							
 							header("Location: ".$CONF['url']."/index.php?a=settings&b=avatar&m=s");
 						} elseif($_FILES['avatarselect']['name'][$key] == '') { 
@@ -76,7 +119,52 @@ function PageMain() {
 						}
 					}
 				}
-				
+     
+
+     			if(isset($_FILES['bck']['name'])) {
+					foreach ($_FILES['bck']['error'] as $key => $error) {
+					$ext = pathinfo($_FILES['bck']['name'][$key], PATHINFO_EXTENSION);
+					$size = $_FILES['bck']['size'][$key];
+					$extArray = explode(',', $settings['format']);
+					
+					// Get the image size
+					list($width, $height) = getimagesize($_FILES['bck']['tmp_name'][0]);
+					$ratio = ($width / $height);
+						if (in_array(strtolower($ext), $extArray) && $size < $maxsize && $size > 0 && !empty($width) && !empty($height)) {
+							$rand = mt_rand();
+							$tmp_name = $_FILES['bck']['tmp_name'][$key];
+							$name = pathinfo($_FILES['bck']['name'][$key], PATHINFO_FILENAME);
+							$fullname = $_FILES['bck']['name'][$key];
+							$size = $_FILES['bck']['size'][$key];
+							$type = pathinfo($_FILES['bck']['name'][$key], PATHINFO_EXTENSION);
+							$finalName = mt_rand().'_'.mt_rand().'_'.mt_rand().'.'.$db->real_escape_string($ext);
+							
+							// Move the file into the uploaded folder
+							move_uploaded_file($tmp_name, 'uploads/bck/'.$finalName);
+
+							// Send the image name in array format to the function
+							$image = array('bck' => $finalName);
+							$updateUserSettings->query_array('users', $image);
+
+							// $bck = array('bck'=>'baclgrpadsfa'); 
+							// $updateUserSettings->query_array('users', $bck);													
+
+							
+							header("Location: ".$CONF['url']."/index.php?a=settings&b=avatar&m=s");
+						} elseif($_FILES['bck']['name'][$key] == '') { 
+							//Daca nu este selectata nici o fila.
+							header("Location: ".$CONF['url']."/index.php?a=settings&b=avatar&m=nf");
+						} elseif($size > $maxsize || $size == 0) { 
+							//Daca fila are dimensiunea mai mare decat dimensiunea admisa, sau egala cu 0.
+							header("Location: ".$CONF['url']."/index.php?a=settings&b=avatar&m=fs");
+						} else { 
+							//Daca formatul filei nu este un format admis.
+							header("Location: ".$CONF['url']."/index.php?a=settings&b=avatar&m=wf");
+						}
+					}
+				}
+
+
 				if(isset($_FILES['coverselect']['name'])) {
 					foreach ($_FILES['coverselect']['error'] as $key => $error) {
 					$ext = pathinfo($_FILES['coverselect']['name'][$key], PATHINFO_EXTENSION);
@@ -101,6 +189,8 @@ function PageMain() {
 							// Send the image name in array format to the function
 							$image = array('cover' => $finalName);
 							$updateUserSettings->query_array('users', $image);
+
+						
 							
 							header("Location: ".$CONF['url']."/index.php?a=settings&b=avatar&m=s");
 						} elseif($_FILES['coverselect']['name'][$key] == '') { 
@@ -211,11 +301,22 @@ function PageMain() {
 				
 				$date = explode('-', $userSettings['born']);
 				
-				$TMPL['years'] = generateDateForm(0, $date[0]);
+				$TMPL['years']  = generateDateForm(0, $date[0]);
 				$TMPL['months'] = generateDateForm(1, $date[1]);
-				$TMPL['days'] = generateDateForm(2, $date[2]);
+				$TMPL['days']   = generateDateForm(2, $date[2]);
 				
-				$TMPL['currentFirstName'] = $userSettings['first_name']; $TMPL['currentLastName'] = $userSettings['last_name']; $TMPL['currentEmail'] = $userSettings['email']; $TMPL['currentLocation'] = $userSettings['location']; $TMPL['currentWebsite'] = $userSettings['website']; $TMPL['currentBio'] = $userSettings['bio']; $TMPL['currentFacebook'] = $userSettings['facebook']; $TMPL['currentTwitter'] = $userSettings['twitter'];  $TMPL['currentGplus'] = $userSettings['gplus'];
+				$TMPL['currentFirstName'] = $userSettings['first_name']; $TMPL['currentLastName'] = $userSettings['last_name']; $TMPL['currentEmail'] = $userSettings['email']; $TMPL['currentLocation'] = $userSettings['location']; $TMPL['currentWebsite'] = $userSettings['website']; $TMPL['currentBio'] = $userSettings['bio']; $TMPL['currentFacebook'] = $userSettings['facebook'];$TMPL['currentLinkedin'] = $userSettings['linkedin']; $TMPL['currentTwitter'] = $userSettings['twitter'];  
+				$TMPL['currentGplus'] = $userSettings['gplus'];
+				$TMPL['currentFitness'] = $userSettings['fitness'];
+				
+				$TMPL['currentProfession'] = $userSettings['profession'];
+				$TMPL['currentEmployer_name'] = $userSettings['employer_name'];
+				$TMPL['currentCollege'] = $userSettings['college'];
+				$TMPL['currentCollege_year'] = $userSettings['college_year'];
+				$TMPL['currentSelf_assessment'] = $userSettings['self_assessment'];
+
+
+
 				if($userSettings['private'] == '1') {
 					$TMPL['on'] = 'selected="selected"';
 				} elseif($userSettings['private'] == '2') {
@@ -274,7 +375,7 @@ function PageMain() {
 	<a href="'.$CONF['url'].'/index.php?a=settings">'.$LNG['user_menu_general'].'</a> 
 	<a href="'.$CONF['url'].'/index.php?a=settings&b=avatar">'.$LNG['user_menu_avatar'].'</a>
 	<a href="'.$CONF['url'].'/index.php?a=settings&b=notifications">'.$LNG['user_menu_notifications'].'</a>
-	<a href="'.$CONF['url'].'/index.php?a=settings&b=security">'.$LNG['user_menu_security'].'</a>';
+	<a href="'.$CONF['url'].'/index.php?a=settings&b=security"> Deactivate acc / '.$LNG['user_menu_security'].'</a>';
 	
 	$TMPL['image'] = '<img src="'.$CONF['url'].'/thumb.php?src='.$verify['image'].'&t=a" width="80" height="80" />';	
 				

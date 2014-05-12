@@ -112,6 +112,7 @@ class register {
 	public $email_like;				// The general e-mail like setting [if allowed, it will turn on emails on likes]
 	public $email_comment;			// The general e-mail like setting [if allowed, it will turn on emails on comments]
 	public $email_new_friend;		// The general e-mail new friend setting [if allowed, it will turn on emails on new friendships]
+	public $born;
 	
 	function process() {
 		global $LNG;
@@ -145,6 +146,13 @@ class register {
 		
 		return ($result->num_rows == 0) ? 0 : 1;
 	}
+
+	function verify_if_deativated_user_exist() {
+		$query = sprintf("SELECT `username` FROM `users_deactivated` WHERE `username` = '%s'", $this->db->real_escape_string(strtolower($this->username)));
+		$result = $this->db->query($query);
+		
+		return ($result->num_rows == 0) ? 0 : 1;
+	}
 	
 	function verify_if_email_exists() {
 		$query = sprintf("SELECT `email` FROM `users` WHERE `email` = '%s'", $this->db->real_escape_string(strtolower($this->email)));
@@ -164,6 +172,69 @@ class register {
 			return true;
 		}
 	}
+	//---------------------------------------------------------------------------------------------
+	function dateDiff($time1, $time2, $precision = 6)
+    {
+        // If not numeric then convert texts to unix timestamps
+        if (!is_int($time1)) {
+            $time1 = strtotime($time1);
+        }
+        if (!is_int($time2)) {
+            $time2 = strtotime($time2);
+        }
+
+        // If time1 is bigger than time2
+        // Then swap time1 and time2
+        if ($time1 > $time2) {
+            $ttime = $time1;
+            $time1 = $time2;
+            $time2 = $ttime;
+        }
+
+        // Set up intervals and diffs arrays
+        $intervals = array('year', 'month', 'day', 'hour', 'minute', 'second');
+        $diffs     = array();
+
+        // Loop thru all intervals
+        foreach ($intervals as $interval) {
+            // Set default diff to 0
+            $diffs[$interval] = 0;
+            // Create temp time from time1 and interval
+            $ttime = strtotime("+1 " . $interval, $time1);
+            // Loop until temp time is smaller than time2
+            while ($time2 >= $ttime) {
+                $time1 = $ttime;
+                $diffs[$interval]++;
+                // Create new temp time from time1 and interval
+                $ttime = strtotime("+1 " . $interval, $time1);
+            }
+        }
+
+        $count = 0;
+        $times = array();
+        // Loop thru all diffs
+        foreach ($diffs as $interval => $value) {
+            // Break if we have needed precission
+            if ($count >= $precision) {
+                break;
+            }
+            // Add value and interval
+            // if value is bigger than 0
+            if ($value >= 0) {
+                // Add s if value is not 1
+                if ($value != 1) {
+                    $interval .= "s";
+                }
+                // Add value and interval to times array
+                $times[] = $value; // . " " . $interval;
+                $count++;
+            }
+        }
+
+        // Return string with times
+        //return implode(", ", $times);
+        return $times;
+    }
 	
 	function validate_values() {
 		// Create the array which contains the Language variable
@@ -172,6 +243,9 @@ class register {
 		// Define the Language variable for each type of error
 		if($this->verify_if_user_exist() !== 0) {
 			$error[] .= 'user_exists';
+		}	
+		if($this->verify_if_deativated_user_exist() !== 0) {
+			$error[] .= 'user_exists';
 		}
 		if($this->verify_if_email_exists() !== 0) {
 			$error[] .= 'email_exists';
@@ -179,13 +253,13 @@ class register {
 		if(empty($this->username) && empty($this->password) && empty($email)) {
 			$error[] .= 'all_fields';
 		}
-		if(strlen($this->password) <= 2) {
+		if(strlen($this->password) <= 6) {
 			$error[] .= 'password_too_short';
 		}
 		if(!ctype_alnum($this->username)) {
 			$error[] .= 'user_alnum';
 		}
-		if(strlen($this->username) <= 2 || strlen($this->username) >= 33) {
+		if(strlen($this->username) <= 4 || strlen($this->username) >= 33) {
 			$error[] .= 'user_too_short';
 		}
 		if(!filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
@@ -194,12 +268,18 @@ class register {
 		if($this->verify_captcha() == false) {
 			$error[] .= 'invalid_captcha';
 		}
-		
+		$timeDifference =  $this->dateDiff( $this->born , date('Y-m-d'));
+		$year = $timeDifference[0];
+		if($year < 17){
+			$error[] .= 'you_must_have_more_than_17_years';
+		} 
+		//echo $year; die();
 		return $error;
 	}
 	
 	function query() {
-		$query = sprintf("INSERT into `users` (`username`, `password`, `email`, `date`, `image`, `privacy`, `cover`, `verified`, `online`, `notificationl`, `notificationc`, `notifications`, `notificationd`, `notificationf`, `email_comment`, `email_like`, `email_new_friend`) VALUES ('%s', '%s', '%s', '%s', 'default.png', '%s', 'default.png', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');", $this->db->real_escape_string(strtolower($this->username)), md5($this->db->real_escape_string($this->password)), $this->db->real_escape_string($this->email), date("Y-m-d H:i:s"), $this->db->real_escape_string($this->message_privacy), $this->db->real_escape_string($this->verified), time(), $this->db->real_escape_string($this->like_notification), $this->db->real_escape_string($this->comment_notification), $this->db->real_escape_string($this->shared_notification), $this->db->real_escape_string($this->chat_notification), $this->db->real_escape_string($this->friend_notification), $this->db->real_escape_string($this->email_comment), $this->db->real_escape_string($this->email_like), $this->db->real_escape_string($this->email_new_friend));
+		$query = sprintf("INSERT into `users` (`born`,`username`, `password`, `email`, `date`, `image`, `privacy`, `cover`, `verified`, `online`, `notificationl`, `notificationc`, `notifications`, `notificationd`, `notificationf`, `email_comment`, `email_like`, `email_new_friend`) VALUES ('%s','%s', '%s', '%s', '%s', 'default.png', '%s', 'default.png', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');",   $this->db->real_escape_string(strtolower($this->born)),$this->db->real_escape_string(strtolower($this->username)), md5($this->db->real_escape_string($this->password)), $this->db->real_escape_string($this->email), date("Y-m-d H:i:s"), $this->db->real_escape_string($this->message_privacy), $this->db->real_escape_string($this->verified), time(), $this->db->real_escape_string($this->like_notification), $this->db->real_escape_string($this->comment_notification), $this->db->real_escape_string($this->shared_notification), $this->db->real_escape_string($this->chat_notification), $this->db->real_escape_string($this->friend_notification), $this->db->real_escape_string($this->email_comment), $this->db->real_escape_string($this->email_like), $this->db->real_escape_string($this->email_new_friend));
+
 		$this->db->query($query);
 		// return ($this->db->query($query)) ? 0 : 1;
 	}
@@ -210,6 +290,7 @@ class logIn {
 	public $username;	// Username Property
 	public $password;	// Password Property
 	public $remember;	// Option to remember the usr / pwd (_COOKIE) Property
+	public $provider_uid;	
 	
 	function in() {
 		global $LNG;
@@ -226,14 +307,122 @@ class logIn {
 			
 			// Redirect the user to his personal profile
 			header("Location: ".$this->url."/index.php?a=feed");
-		} else {
+		} elseif($this->isDeactivated() == 1 ){
+
+				//selektuje deaktiviranog user-a
+					$query = sprintf("SELECT * FROM `users_deactivated` WHERE `username` = '%s' AND `password` = '%s'",  $this->db->real_escape_string($this->username), md5($this->db->real_escape_string($this->password)));
+					$result = $this->db->query($query);
+					$row = $result->fetch_assoc();
+				// uzme id od user-a
+					$idu = $row['idu'];
+				
+				// ovo je da upishe u deactivate tabelu
+					$query2 = move_user($row,'users');
+					$result2 = $this->db->query($query2);
+
+				// izbrisem user-a iz tabele deactivated_users
+					$query_delete =  sprintf("DELETE FROM `users_deactivated` WHERE `idu` = '%s' ",$idu);
+					$result_delete = $this->db->query($query_delete);
+			
+				// uloguj korisnika 
+					if($this->remember == 1) 
+					{ 
+					// If checkbox, then set cookie
+						setcookie("username", $this->username, time() + 30 * 24 * 60 * 60); // Expire in one month
+						setcookie("password", md5($this->password), time() + 30 * 24 * 60 * 60); // Expire in one month
+					} 
+					else 
+					{ 
+					// Else set session
+						$_SESSION['username'] = $this->username;
+						$_SESSION['password'] = md5($this->password);
+
+					}
+
+					header("Location: ".$CONF['url']."/index.php?a=feed");
+
+
+		}else {
 			// If wrong credentials are entered, unset everything
 			$this->logOut();
 			
 			return $LNG['invalid_user_pw'];
 		}
 	}
+
+	function socialIn()
+	{
+		if($this->socialLogIn() == 1) {
+			if($this->remember == 1) { // If checkbox, then set cookie
+				setcookie("username", $this->username, time() + 30 * 24 * 60 * 60); // Expire in one month
+				setcookie("password", md5($this->provider_uid), time() + 30 * 24 * 60 * 60); // Expire in one month
+			} else { // Else set session
+				$_SESSION['username'] = $this->username;
+				$_SESSION['password'] = md5($this->provider_uid);
+			}
+			 	
+			// Redirect the user to his personal profile
+			header("Location: ".$this->url."/index.php?a=feed");
+
+
+
+
+
+		// }elseif($this->socialLogIn_deactivated() == 1 ){
+		// 		//selektuje deaktiviranog user-a
+		// 			$query = sprintf("SELECT * FROM `users_deactivated` WHERE `provider_uid` = '%s' ", $this->db->real_escape_string($this->provider_uid));
+		// 			$result = $this->db->query($query);
+		// 			$row = $result->fetch_assoc();
+		// 		// uzme id od user-a
+		// 			$idu = $row['idu'];
+				
+		// 		// ovo je da upishe u deactivate tabelu
+		// 			$query2 = move_user($row,'users');
+		// 			$result2 = $this->db->query($query2);
+
+		// 		// izbrisem user-a iz tabele deactivated_users
+		// 			$query_delete =  sprintf("DELETE FROM `users_deactivated` WHERE `idu` = '%s' ",$idu);
+		// 			$result_delete = $this->db->query($query_delete);
+			
+		// 		// uloguj korisnika 
+		// 			if($this->remember == 1) 
+		// 			{ // If checkbox, then set cookie
+		// 				setcookie("username", $this->username, time() + 30 * 24 * 60 * 60); // Expire in one month
+		// 				setcookie("password", md5($this->password), time() + 30 * 24 * 60 * 60); // Expire in one month
+		// 			} 
+		// 			else 
+		// 			{ // Else set session
+		// 				$_SESSION['username'] = $this->username;
+		// 				$_SESSION['password'] = md5($this->password);
+
+		// 			}
+
+		// 			header("Location: ".$CONF['url']."/index.php?a=feed");
+
+		}else { 
+			// If wrong credentials are entered, unset everything
+			$this->logOut();
+			
+			return $LNG['invalid_user_pw'];
+		}
+	}
+
+
+	function socialLogIn(){
+		$query = sprintf("SELECT * FROM `users` WHERE `provider_uid` = '%s' ", $this->db->real_escape_string($this->provider_uid));
+		$result = $this->db->query($query);
+		// proveriti dal je nalog deaktiviran ako jeste nemoj prikazivati sta ? ? ?
+		//echo ($result->num_rows == 0) ? 0 : 1; echo '-------------';die();
+		return ($result->num_rows == 0) ? 0 : 1;
+	}
 	
+	function socialLogIn_deactivated(){
+		$query = sprintf("SELECT * FROM `users_deactivated` WHERE `provider_uid` = '%s' ", $this->db->real_escape_string($this->provider_uid));
+		$result = $this->db->query($query);
+		// proveriti dal je nalog deaktiviran ako jeste nemoj prikazivati sta ? ? ?
+
+		return ($result->num_rows == 0) ? 0 : 1;
+	}
 	function queryLogIn() {
 		// If the username input string is an e-mail, switch the query
 		if(filter_var($this->db->real_escape_string($this->username), FILTER_VALIDATE_EMAIL)) {
@@ -245,12 +434,26 @@ class logIn {
 		
 		return ($result->num_rows == 0) ? 0 : 1;
 	}
+
+	function isDeactivated(){
+		// If the username input string is an e-mail, switch the query
+		if(filter_var($this->db->real_escape_string($this->username), FILTER_VALIDATE_EMAIL)) {
+			$query = sprintf("SELECT * FROM `users_deactivated` WHERE `email` = '%s' AND `password` = '%s'", $this->db->real_escape_string($this->username), md5($this->db->real_escape_string($this->password)));
+		} else {
+			$query = sprintf("SELECT * FROM `users_deactivated` WHERE `username` = '%s' AND `password` = '%s'", $this->db->real_escape_string($this->username), md5($this->db->real_escape_string($this->password)));
+		}
+		$result = $this->db->query($query);
+		
+		return ($result->num_rows == 0) ? 0 : 1;
+	}
 	
 	function logOut() {
 		unset($_SESSION['username']);
 		unset($_SESSION['password']);
 		setcookie("username", '', 1);
 		setcookie("password", '', 1);
+			// ovo je da izbaci logovanje preko facebook-a
+		Hybrid_Auth::logoutAllProviders();
 	}
 }
 
@@ -288,6 +491,8 @@ class loggedIn {
 		unset($_SESSION['password']);
 		setcookie("username", '', 1);
 		setcookie("password", '', 1);
+		// ovo je da izbaci logovanje preko facebook-a
+		Hybrid_Auth::logoutAllProviders();
 	}
 }
 
@@ -2964,7 +3169,7 @@ class feed {
 		// Sort the array
 		usort($array, 'sortDateAsc');
 		
-		$activity .= '<div class="sidebar-container widget-friends-activity"><div class="sidebar-content"><div class="sidebar-header">'.$LNG['sidebar_friends_activity'].'</div><div class="sidebar-fa-content">';
+		$activity .= '<div class="sidebar-container  widget-friends-activity"><div class="sidebar-content"><div class="sidebar-header">'.$LNG['sidebar_friends_activity'].'</div><div class="sidebar-fa-content">';
 		$i = 0;
 		foreach($array as $value) {
 			if($i == $limit) break;
@@ -3899,5 +4104,27 @@ function deletePhotos($type, $value) {
 			unlink('../uploads/media/'.$image);
 		}
 	}
+}
+
+//--------------------------------------------------------------------------------------------- odavde krecu moje scripte !!!gg 
+function move_user($array,$table) {
+   $count = 0;
+   $fields = '';
+
+   foreach($array as $col => $val) {
+      if ($count++ != 0) $fields .= ', ';
+      $col = $col;
+      $val = $val;
+      if(is_null($val)){
+      	$val = "NULL";
+      }elseif(is_numeric($val)){
+      	$val = (int)$val;
+      }else{
+      	$val = '"'. $val .'"';
+      }
+      $fields .= "`$col` = $val";
+   }
+
+  return $query = "INSERT INTO `$table` SET $fields;";
 }
 ?>
