@@ -1,20 +1,25 @@
 <?php
+
+
+// ini_set('display_errors',1);
+// ini_set('display_startup_errors',1);
+// error_reporting(-1);
 error_reporting(0);
-#error_reporting(E_ALL ^ E_NOTICE);
+//error_reporting(E_ALL ^ E_NOTICE);
 
 $CONF = $TMPL = array();
 
 // The MySQL credentials
 $CONF['host'] = 'localhost';
 $CONF['user'] = 'root';
-$CONF['pass'] = 'acrt1357';
+$CONF['pass'] = '';
 $CONF['name'] = 'facebookkiller';
 
 // The Installation URL
-$CONF['url'] = 'http://ec2-54-234-171-154.compute-1.amazonaws.com/facebookkiller/';
+$CONF['url'] = 'http://fb.killer';
 
 // The Notifications e-mail
-$CONF['email'] = 'infinitedevelopment@me.com';
+$CONF['email'] = 'stefan.stex@yahoo.com';
 
 // The themes directory
 $CONF['theme_path'] = 'themes';

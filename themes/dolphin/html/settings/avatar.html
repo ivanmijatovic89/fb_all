@@ -35,3 +35,18 @@
 		</div>
 	</div>
 </div>
+
+<div class="message-divider"></div>
+<div class="page-inner"><div class="page-title">{$lng->user_desc_bck}</div></div>
+<div class="message-divider"></div>
+<div class="page-input-title-img-wall">{$bck}</div>
+<div class="page-inner">
+	<div class="page-input-content">
+		<div class="page-input-container">
+			<form id="upload" class="uploadForm" action="{$url}/index.php?a=settings&b=avatar" method="POST" enctype="multipart/form-data">
+				<input type="file" id="coverselect" name="bck[]" /><br /><br />
+				<input type="submit" value="{$lng->ttl_upload_bck}" />
+			</form>
+		</div>
+	</div>
+</div>

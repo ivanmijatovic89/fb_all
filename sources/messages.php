@@ -65,7 +65,7 @@ function PageMain() {
 		header("Location: ".$CONF['url']."/index.php?a=welcome");
 	}
 
-	$TMPL['url'] = $CONF['url'];
+	$TMPL['url']   = $CONF['url'];
 	$TMPL['title'] = $LNG['title_messages'].' - '.$settings['title'];
 
 	$skin = new skin('messages/content');

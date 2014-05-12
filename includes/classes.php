@@ -112,6 +112,7 @@ class register {
 	public $email_like;				// The general e-mail like setting [if allowed, it will turn on emails on likes]
 	public $email_comment;			// The general e-mail like setting [if allowed, it will turn on emails on comments]
 	public $email_new_friend;		// The general e-mail new friend setting [if allowed, it will turn on emails on new friendships]
+	public $born;
 	
 	function process() {
 		global $LNG;
@@ -164,6 +165,69 @@ class register {
 			return true;
 		}
 	}
+	//---------------------------------------------------------------------------------------------
+	function dateDiff($time1, $time2, $precision = 6)
+    {
+        // If not numeric then convert texts to unix timestamps
+        if (!is_int($time1)) {
+            $time1 = strtotime($time1);
+        }
+        if (!is_int($time2)) {
+            $time2 = strtotime($time2);
+        }
+
+        // If time1 is bigger than time2
+        // Then swap time1 and time2
+        if ($time1 > $time2) {
+            $ttime = $time1;
+            $time1 = $time2;
+            $time2 = $ttime;
+        }
+
+        // Set up intervals and diffs arrays
+        $intervals = array('year', 'month', 'day', 'hour', 'minute', 'second');
+        $diffs     = array();
+
+        // Loop thru all intervals
+        foreach ($intervals as $interval) {
+            // Set default diff to 0
+            $diffs[$interval] = 0;
+            // Create temp time from time1 and interval
+            $ttime = strtotime("+1 " . $interval, $time1);
+            // Loop until temp time is smaller than time2
+            while ($time2 >= $ttime) {
+                $time1 = $ttime;
+                $diffs[$interval]++;
+                // Create new temp time from time1 and interval
+                $ttime = strtotime("+1 " . $interval, $time1);
+            }
+        }
+
+        $count = 0;
+        $times = array();
+        // Loop thru all diffs
+        foreach ($diffs as $interval => $value) {
+            // Break if we have needed precission
+            if ($count >= $precision) {
+                break;
+            }
+            // Add value and interval
+            // if value is bigger than 0
+            if ($value >= 0) {
+                // Add s if value is not 1
+                if ($value != 1) {
+                    $interval .= "s";
+                }
+                // Add value and interval to times array
+                $times[] = $value; // . " " . $interval;
+                $count++;
+            }
+        }
+
+        // Return string with times
+        //return implode(", ", $times);
+        return $times;
+    }
 	
 	function validate_values() {
 		// Create the array which contains the Language variable
@@ -194,12 +258,18 @@ class register {
 		if($this->verify_captcha() == false) {
 			$error[] .= 'invalid_captcha';
 		}
-		
+		$timeDifference =  $this->dateDiff( $this->born , date('Y-m-d'));
+		$year = $timeDifference[0];
+		if($year < 17){
+			$error[] .= 'you_must_have_more_than_17_years';
+		} 
+		//echo $year; die();
 		return $error;
 	}
 	
 	function query() {
-		$query = sprintf("INSERT into `users` (`username`, `password`, `email`, `date`, `image`, `privacy`, `cover`, `verified`, `online`, `notificationl`, `notificationc`, `notifications`, `notificationd`, `notificationf`, `email_comment`, `email_like`, `email_new_friend`) VALUES ('%s', '%s', '%s', '%s', 'default.png', '%s', 'default.png', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');", $this->db->real_escape_string(strtolower($this->username)), md5($this->db->real_escape_string($this->password)), $this->db->real_escape_string($this->email), date("Y-m-d H:i:s"), $this->db->real_escape_string($this->message_privacy), $this->db->real_escape_string($this->verified), time(), $this->db->real_escape_string($this->like_notification), $this->db->real_escape_string($this->comment_notification), $this->db->real_escape_string($this->shared_notification), $this->db->real_escape_string($this->chat_notification), $this->db->real_escape_string($this->friend_notification), $this->db->real_escape_string($this->email_comment), $this->db->real_escape_string($this->email_like), $this->db->real_escape_string($this->email_new_friend));
+		$query = sprintf("INSERT into `users` (`born`,`username`, `password`, `email`, `date`, `image`, `privacy`, `cover`, `verified`, `online`, `notificationl`, `notificationc`, `notifications`, `notificationd`, `notificationf`, `email_comment`, `email_like`, `email_new_friend`) VALUES ('%s','%s', '%s', '%s', '%s', 'default.png', '%s', 'default.png', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');",   $this->db->real_escape_string(strtolower($this->born)),$this->db->real_escape_string(strtolower($this->username)), md5($this->db->real_escape_string($this->password)), $this->db->real_escape_string($this->email), date("Y-m-d H:i:s"), $this->db->real_escape_string($this->message_privacy), $this->db->real_escape_string($this->verified), time(), $this->db->real_escape_string($this->like_notification), $this->db->real_escape_string($this->comment_notification), $this->db->real_escape_string($this->shared_notification), $this->db->real_escape_string($this->chat_notification), $this->db->real_escape_string($this->friend_notification), $this->db->real_escape_string($this->email_comment), $this->db->real_escape_string($this->email_like), $this->db->real_escape_string($this->email_new_friend));
+
 		$this->db->query($query);
 		// return ($this->db->query($query)) ? 0 : 1;
 	}
@@ -1134,7 +1204,7 @@ class feed {
 							</div>
 						</div>
 						<div class="message-divider"></div>
-						'.$this->getType($row['type'], $row['value'], $row['id']).'
+						'.$this->getType($row['type'], $row['value'], $row['id'], $row['parent_id']).'
 						<div class="message-replies">
 							<div class="message-actions"><div class="message-actions-content" id="message-action'.$row['id'].'">'.$this->getActions($row['id'], $row['likes'], null).'</div></div>
 							<div class="message-replies-content" id="comments-list'.$row['id'].'">
@@ -1341,7 +1411,7 @@ class feed {
 								</div>
 								<div class="cover-description-content">
 									<span id="author'.$profile['idu'].$profile['username'].'"></span><span id="time'.$profile['idu'].$profile['username'].'"></span><div class="cover-username">'.realName($profile['username'], $profile['first_name'], $profile['last_name']).''.((!empty($profile['verified'])) ? '<img src="'.$this->url.'/'.$CONF['theme_url'].'/images/icons/verified.png" title="'.$LNG['verified_user'].'" />' : '').'</div>
-									<div class="cover-description-buttons"><div id="subscribe'.$profile['idu'].'">'.$this->getSubscribe(null, null, null).'</div>'.$this->chatButton($profile['idu'], $profile['username'], 1).'</div>
+									<div class="cover-description-buttons"><div id="subscribe'.$profile['idu'].'">'.$this->getSubscribe(null, null, null).'</div>'.$this->chatButton($profile['idu'], $profile['username'], 1).' <a href="index.php?a=profile&u='.$profile['username'].'&p=photos">Photos</a></div>
 								</div>
 							</div>
 						</div>
@@ -2044,10 +2114,22 @@ class feed {
 
 		return $parsedMessage;
 	}
+
+	function get_album_photos($album_id){
+		$query = sprintf("SELECT a.value,a.tags,a.location,a.likes,a.id FROM album_photos a WHERE a.album_id=%d", $album_id);
+
+   		$result = $this->db->query($query);
+
+   		return $result;
+
+	}
+
+
 	
-	function getType($type, $value, $id) {
+	function getType($type, $value, $id, $parent_id) {
 		global $LNG, $CONF;
 		// Switch the case
+
 		switch($type) {
 		
 			// If it's a map
@@ -2136,6 +2218,80 @@ class feed {
 					return '<div class="message-type-player"><iframe width="100%" height="315" src="http://player.vimeo.com/video/'.str_replace('vm:', '', $value).'" frameborder="0" allowfullscreen></iframe></div>
 					<div class="message-divider"></div>';
 				}
+			// If it's a album	
+			case "album":
+				$result .= '<div class="message-type-image"><div class="image-container-padding">';
+				$result .= '<table>';
+
+				$i = 0;
+
+				$album_photos = $this->get_album_photos($parent_id);
+
+				while ($row = $album_photos->fetch_array()) {
+					if($i == 0){
+						$result .= '<tr>';
+					}
+					$result .= '<td>';
+					$result .= '<a onclick="gallery(\''.$row[0].'\', '.$id.', \'media\')" id="'.$row[0].'">';
+						$result .= '<div class="image-thumbnail-container">'; 
+							$result .='<div class="image-thumbnail">';
+								$result .= '<img src="'.$this->url.'/thumb.php?src='.$row[0].'&w=300&h=300&t=m">'; 
+								
+							$result .='</div>'; 														
+						$result .='</div>';
+					$result .= '</a>';
+					if(!empty($row[2])){
+						$result .= '<span>In '.$row[2].'</span>';
+					}								
+					$result .= '<span class="like_btn"> '.$row[3].'</span>';
+					if(!empty($row[1])){
+						$tags = unserialize($row[1]);
+						$result .= '<br/>';
+						foreach($tags as $user){
+							$result .= '<a href="index.php?a=profile&u='.$user.'">'.$user.'</a><br/>';
+						}
+					}
+					$result .= '<a onclick="doLike2('.$row[4].', 1)" id="doLike288" style="float:right;">Like</a>';
+					$result .= '</td>';
+
+					$i++;
+
+					if($i == 3){
+						$result .= '</tr>';
+						$i = 0;
+					}
+				}
+
+				$result .= '</table>';
+				$result .= '</div>';
+
+				return $result.'</div><div class="message-divider"></div>';
+				break;
+
+				// $images = explode(',', $value);
+				// if(count($images) == 1) {
+				// 	$result .= '<div class="message-type-image">';
+				// 	$i = 0;
+				// 	foreach($images as $image) {
+				// 		if(!empty($image)){
+				// 			$result .= '<a onclick="gallery(\''.$image.'\', '.$id.', \'media\')" id="'.$image.'"><img src="'.$this->url.'/thumb.php?src='.$image.'&w=650&h=300&t=m" /></a>';
+				// 		}else{
+				// 			$result .= "This picture has been deleted";
+				// 		}
+						
+				// 		$i++;
+				// 	}
+				// } else {
+				// 	$result .= '<div class="message-type-image"><div class="image-container-padding">';
+				// 	$i = 0;
+				// 	foreach($images as $image) {
+				// 		$result .= '<a onclick="gallery(\''.$image.'\', '.$id.', \'media\')" id="'.$image.'"><div class="image-thumbnail-container"><div class="image-thumbnail"><img src="'.$this->url.'/thumb.php?src='.$image.'&w=204&h=204&t=m" /></div></div></a>';
+				// 		$i++;
+				// 	}
+				// 	$result .= '</div>';
+				// }
+				// return $result.'</div><div class="message-divider"></div>';
+				// break;
 				
 			// If it's empty
 			case "":
@@ -2171,7 +2327,7 @@ class feed {
 			$stmt = $this->db->prepare("DELETE FROM `chat` WHERE `id` = '{$this->db->real_escape_string($id)}' AND `from` = '{$this->db->real_escape_string($this->id)}'");
 			
 			$x = 2;
-		}
+		} 
 
 		// Execute the statement
 		$stmt->execute();
@@ -2428,6 +2584,7 @@ class feed {
 			// Start the output
 			$link = '<div class="sidebar-container widget-types"><div class="sidebar-content"><div class="sidebar-header">'.$LNG['filter_events'].'</div>';
 			$link .= '<div class="sidebar-link"><a href="'.$this->url.'/index.php?a='.$_GET['a'].$profile.'"><img src="'.$this->url.'/'.$CONF['theme_url'].'/images/icons/events/all.png" />'.$LNG["all_events"].'</a></div>';
+
 			foreach($row as $type) {
 				// Start the strong tag
 				if($type == $bold) {
@@ -2964,7 +3121,7 @@ class feed {
 		// Sort the array
 		usort($array, 'sortDateAsc');
 		
-		$activity .= '<div class="sidebar-container widget-friends-activity"><div class="sidebar-content"><div class="sidebar-header">'.$LNG['sidebar_friends_activity'].'</div><div class="sidebar-fa-content">';
+		$activity .= '<div class="sidebar-container  widget-friends-activity"><div class="sidebar-content"><div class="sidebar-header">'.$LNG['sidebar_friends_activity'].'</div><div class="sidebar-fa-content">';
 		$i = 0;
 		foreach($array as $value) {
 			if($i == $limit) break;

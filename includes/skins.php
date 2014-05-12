@@ -11,6 +11,10 @@ class skin {
 		return $this->make();
 	}
 	
+	// public function doSomeSheet(){
+	// 	return 'Sheet';
+	// }
+
 	public function make() {
 		global $CONF;
 		$file = sprintf('./'.$CONF['theme_path'].'/'.$CONF['theme_name'].'/html/%s.html', $this->filename);
@@ -29,5 +33,6 @@ class skin {
 	
 		return $skin;
 	}
+
 }
 ?>

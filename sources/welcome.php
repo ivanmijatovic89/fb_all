@@ -15,6 +15,7 @@ function PageMain() {
 		$reg->username = $_POST['username'];
 		$reg->password = $_POST['password'];
 		$reg->email = $_POST['email'];
+		$reg->born  = $_POST['year'].'-'.$_POST['month'].'-'.$_POST['day'];//$_POST['born'];
 		$reg->captcha = $_POST['captcha'];
 		$reg->captcha_on = $settings['captcha'];
 		$reg->message_privacy = $settings['mprivacy'];

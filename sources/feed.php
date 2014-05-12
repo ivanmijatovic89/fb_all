@@ -1,5 +1,6 @@
 <?php
 function PageMain() {
+
 	global $TMPL, $LNG, $CONF, $db, $loggedIn, $settings;
 	
 	if(isset($_SESSION['username']) && isset($_SESSION['password']) || isset($_COOKIE['username']) && isset($_COOKIE['password'])) {	
@@ -94,5 +95,6 @@ function PageMain() {
 
 	$skin = new skin('shared/timeline');
 	return $skin->make();
+	
 }
 ?>
